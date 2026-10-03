@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://greggirault.github.io/fluxsimpleia/sitemap.xml
