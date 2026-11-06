@@ -1,0 +1,1 @@
+date_utc,provider,model,client_version,workload_id,attempts,successful_jobs,failed_jobs,api_spend_usd,median_latency_ms,p95_latency_ms,notes

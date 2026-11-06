@@ -160,6 +160,41 @@
       color: var(--muted);
       font-size: 14px;
     }
+    .calculator {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: clamp(20px, 3vw, 32px);
+      background: var(--panel);
+    }
+    .calculator-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 20px;
+    }
+    .calculator-field { display: block; margin-top: 14px; }
+    .calculator-field span { display: block; margin-bottom: 6px; color: var(--muted); }
+    .calculator-field input {
+      width: 100%;
+      min-height: 44px;
+      padding: 10px 12px;
+      border: 1px solid #426077;
+      border-radius: 8px;
+      background: #0b121a;
+      color: var(--text);
+      font: inherit;
+    }
+    .calculator-field input:focus-visible, .button:focus-visible {
+      outline: 3px solid var(--accent);
+      outline-offset: 3px;
+    }
+    .results {
+      margin-top: 22px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--panel-2);
+    }
+    .results strong { color: var(--accent-2); }
     footer {
       padding: 28px 0 42px;
       border-top: 1px solid rgba(255,255,255,.06);
@@ -168,7 +203,7 @@
     }
     @media (max-width: 760px) {
       header { padding-top: 48px; }
-      .grid, .checklist { grid-template-columns: 1fr; }
+      .grid, .checklist, .calculator-grid { grid-template-columns: 1fr; }
       .card { min-height: 0; }
     }
   </style>
@@ -183,7 +218,8 @@
         setup friction, tool behavior, retries and failure modes.
       </p>
       <div class="actions">
-        <a class="button primary" href="#setups">See tested setup paths</a>
+        <a class="button primary" href="#calculator">Compare your real costs</a>
+        <a class="button secondary" href="#setups">Explore setup options</a>
         <a class="button secondary" href="https://x.com/fluxsimpleia" rel="noopener noreferrer">Follow @fluxsimpleia on X</a>
       </div>
     </div>
@@ -195,6 +231,30 @@
       <div class="notice">
         Some links below are affiliate links. I may earn a commission if you sign up or buy through them.
         A referral program, vendor documentation or one successful request is not treated as proof of performance.
+      </div>
+    </section>
+
+    <section id="calculator" aria-labelledby="calculator-title">
+      <h2 id="calculator-title">Which API actually costs less for your work?</h2>
+      <p class="section-copy">Compare what you spent against jobs that actually completed. Enter your own measured totals for the same workload and time period. Everything runs locally in your browser; no figures are uploaded.</p>
+      <div class="calculator">
+        <form id="cost-form" novalidate>
+          <div class="calculator-grid">
+            <div>
+              <h3>Provider A</h3>
+              <label class="calculator-field" for="a-spend"><span>Total API spend (USD)</span><input id="a-spend" type="number" min="0" step="any" inputmode="decimal" placeholder="e.g. 12.50" required></label>
+              <label class="calculator-field" for="a-jobs"><span>Successfully completed jobs</span><input id="a-jobs" type="number" min="1" step="1" inputmode="numeric" placeholder="e.g. 50" required></label>
+            </div>
+            <div>
+              <h3>Provider B</h3>
+              <label class="calculator-field" for="b-spend"><span>Total API spend (USD)</span><input id="b-spend" type="number" min="0" step="any" inputmode="decimal" placeholder="e.g. 9.75" required></label>
+              <label class="calculator-field" for="b-jobs"><span>Successfully completed jobs</span><input id="b-jobs" type="number" min="1" step="1" inputmode="numeric" placeholder="e.g. 30" required></label>
+            </div>
+          </div>
+          <div class="results" id="cost-result" role="status" aria-live="polite">Enter measured spend and completed jobs for both providers to see the comparison.</div>
+        </form>
+        <p class="footnote">Include unsuccessful attempts and retry costs in total spend. Compare equivalent jobs, and count subscriptions, taxes and support costs separately where relevant. Price alone cannot establish model quality or reliability.</p>
+        <a class="button secondary" href="benchmark-scorecard.csv" download>Download the benchmark scorecard (CSV)</a>
       </div>
     </section>
 
@@ -278,5 +338,36 @@
       Flux Simple IA · Last reviewed 3 October 2026 · Benchmarks are snapshots, not guarantees.
     </div>
   </footer>
+  <script>
+    (() => {
+      const form = document.getElementById('cost-form');
+      const result = document.getElementById('cost-result');
+      const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 4 });
+      function calculate() {
+        const values = ['a-spend', 'a-jobs', 'b-spend', 'b-jobs'].map(id => {
+          const input = document.getElementById(id);
+          return input.value.trim() === '' ? NaN : Number(input.value);
+        });
+        const [spendA, jobsA, spendB, jobsB] = values;
+        if (!values.every(Number.isFinite) || spendA < 0 || spendB < 0 || !Number.isInteger(jobsA) || !Number.isInteger(jobsB) || jobsA <= 0 || jobsB <= 0) {
+          result.textContent = 'Enter non-negative total spend and a positive whole number of completed jobs for each provider.';
+          return;
+        }
+        const costA = spendA / jobsA;
+        const costB = spendB / jobsB;
+        const comparison = Math.abs(costA - costB) < 1e-12
+          ? 'Both providers cost the same per completed job.'
+          : `${costA < costB ? 'Provider A' : 'Provider B'} is cheaper per completed job (${Math.abs(costA - costB) / Math.max(costA, costB) * 100 < 0.01 ? 'less than 0.01' : (Math.abs(costA - costB) / Math.max(costA, costB) * 100).toFixed(1)}% lower).`;
+        result.replaceChildren();
+        const summary = document.createElement('strong');
+        summary.textContent = comparison;
+        const detail = document.createElement('p');
+        detail.textContent = `Provider A: ${currency.format(costA)} per completed job. Provider B: ${currency.format(costB)} per completed job.`;
+        result.append(summary, detail);
+      }
+      form.addEventListener('input', calculate);
+      form.addEventListener('submit', event => event.preventDefault());
+    })();
+  </script>
 </body>
 </html>
