@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="index,follow">
+  <title>AI API Benchmark Protocol — Flux Simple IA</title>
+  <meta name="description" content="A reproducible, practical method for comparing AI API providers by completed-job cost, failures, tool calls, streaming and latency. Free Python smokecheck and scorecard.">
+  <meta property="og:title" content="AI API Benchmark Protocol — Free Guide">
+  <meta property="og:description" content="Run a repeatable AI API smokecheck, classify failures, and compare successful-job cost without misleading token-price claims.">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://greggirault.github.io/fluxsimpleia/methodology.html">
+  <link rel="canonical" href="https://greggirault.github.io/fluxsimpleia/methodology.html">
+  <style>
+    :root { color-scheme: dark; --bg:#090d12; --panel:#111821; --text:#edf4fb; --muted:#a3b6c6; --line:#2a4052; --accent:#7dd3fc; --accent2:#a7f3d0; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:radial-gradient(circle at 15% 0%,rgba(56,189,248,.12),transparent 37rem),var(--bg); color:var(--text); font:16px/1.7 Inter,system-ui,-apple-system,"Segoe UI",sans-serif; }
+    .shell { max-width:970px; padding:0 24px; margin:0 auto; }
+    nav { padding:25px 0; }
+    nav a, a { color:var(--accent); }
+    nav a { text-decoration:none; font-weight:700; }
+    header { padding:35px 0 45px; border-bottom:1px solid var(--line); }
+    .eyebrow { color:var(--accent2); text-transform:uppercase; letter-spacing:.08em; font-size:13px; font-weight:800; }
+    h1 { font-size:clamp(38px,6vw,65px); line-height:1.09; letter-spacing:-.045em; margin:12px 0; }
+    h2 { font-size:clamp(26px,4vw,34px); line-height:1.2; margin:0 0 16px; }
+    h3 { font-size:20px; margin:0 0 9px; }
+    p { max-width:77ch; margin:0 0 16px; }
+    .lead { color:var(--muted); font-size:21px; }
+    main { padding:44px 0 70px; }
+    section { margin-top:46px; }
+    section:first-child { margin-top:0; }
+    ul,ol { padding-left:24px; }
+    li { margin:8px 0; }
+    .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:15px; }
+    .card { padding:24px; background:var(--panel); border:1px solid var(--line); border-radius:13px; }
+    .card p { color:var(--muted); }
+    .notice { border-left:3px solid var(--accent2); padding:15px 20px; background:var(--panel); border-radius:8px; }
+    .button { display:inline-flex; align-items:center; padding:11px 18px; min-height:44px; border:1px solid var(--accent); border-radius:9px; text-decoration:none; font-weight:800; background:var(--accent); color:#0c1720; margin:8px 10px 8px 0; }
+    .button.secondary { background:transparent; color:var(--text); border-color:var(--line); }
+    a:focus-visible { outline:3px solid var(--accent2); outline-offset:4px; }
+    pre { padding:19px; overflow-x:auto; border:1px solid var(--line); border-radius:10px; background:#0c141d; }
+    code { font:14px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace; }
+    table { width:100%; border-collapse:collapse; font-size:15px; }
+    th, td { text-align:left; vertical-align:top; padding:12px; border-bottom:1px solid var(--line); }
+    th { color:var(--accent2); }
+    .table-wrap { overflow-x:auto; }
+    footer { border-top:1px solid var(--line); color:var(--muted); padding:24px 0 46px; font-size:14px; }
+    @media(max-width:650px) { .grid { grid-template-columns:1fr; } th,td { padding:9px; } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <nav><a href="./">Flux Simple IA</a> / Benchmark Protocol</nav>
+    <header>
+      <div class="eyebrow">Free field guide · version 1.0 · 6 November 2026</div>
+      <h1>Prove an AI API works before moving your agents.</h1>
+      <p class="lead">A practical protocol for comparing provider routes on real tasks, with a one-request smokecheck and a transparent measurement sheet.</p>
+      <a class="button" href="tools/api_smokecheck.py" download>Download Python smokecheck</a>
+      <a class="button secondary" href="benchmark-scorecard.csv" download>Download CSV scorecard</a>
+    </header>
+    <main>
+      <section aria-labelledby="scope">
+        <h2 id="scope">What this protocol measures</h2>
+        <div class="grid">
+          <div class="card"><h3>Functional compatibility</h3><p>Authentication, one normal chat completion, optional tool calls, and optional streaming. A successful handshake is a starting point.</p></div>
+          <div class="card"><h3>Real workload economics</h3><p>Money spent on all attempts divided by successfully completed, equivalent jobs. Track retries and subscriptions separately.</p></div>
+          <div class="card"><h3>Latency and reliability</h3><p>p50 and p95 elapsed times across repeated runs, with error classes, request concurrency and client versions recorded.</p></div>
+          <div class="card"><h3>Quality of outcome</h3><p>Repeat the same acceptance tests against final artifacts. A valid API response is not necessarily a completed user task.</p></div>
+        </div>
+      </section>
+      <section aria-labelledby="start">
+        <h2 id="start">Start with one safe smokecheck</h2>
+        <p>The included <a href="tools/api_smokecheck.py">Python tool</a> uses the standard library. It makes exactly one request to an OpenAI-compatible chat-completions endpoint. It does not create accounts, change provider settings, or store keys. If the provider bills requests, that one request may incur a charge.</p>
+        <ol>
+          <li>Choose a supported model and retrieve the provider's documented HTTPS base URL.</li>
+          <li>Make its API key available to the command as an <code>API_KEY</code> environment variable using your password manager or a protected session. Keep it out of shell history and source files.</li>
+          <li>Run a normal response check. If it passes, optionally test <code>stream</code> and <code>tool</code> separately.</li>
+          <li>Read the JSON output. A passing smokecheck proves this specific request succeeded, not an availability percentage or guaranteed compatibility.</li>
+        </ol>
+        <pre><code>py -3 tools/api_smokecheck.py --base-url $ApiBaseUrl --model $ModelId --mode normal
+py -3 tools/api_smokecheck.py --base-url $ApiBaseUrl --model $ModelId --mode stream
+py -3 tools/api_smokecheck.py --base-url $ApiBaseUrl --model $ModelId --mode tool</code></pre>
+        <p>These commands use PowerShell variables you populate from the provider documentation. For Unix shells, use <code>python3</code> and your shell's variable syntax. The output omits the API key and response bodies, and reports provider token usage only when the provider supplies it.</p>
+        <div class="notice"><strong>Important:</strong> Some gateways use Anthropic-specific APIs or implement only part of the OpenAI protocol. A failure can reflect a protocol mismatch or model capability, not an overall service outage. Never publish a performance claim based on one smokecheck.</div>
+      </section>
+      <section aria-labelledby="procedure">
+        <h2 id="procedure">The reproducible comparison</h2>
+        <ol>
+          <li><strong>Freeze the inputs.</strong> Write a fixed collection of tasks, prompts, expected deliverables, versioned client configuration, region, concurrency and time window.</li>
+          <li><strong>Define success first.</strong> Use task-specific checks: correct tool-call parameters, a valid build or test result, the expected JSON schema, or another observable outcome.</li>
+          <li><strong>Run multiple comparable trials.</strong> Record start time, completion time, status, retry count, and any data needed to reproduce the result, without logging private user prompts or API credentials publicly.</li>
+          <li><strong>Classify failures.</strong> Distinguish authentication, rate limiting, routing, bad tool calls, timeouts and wrong answers. Label uncertain causes as unconfirmed.</li>
+          <li><strong>Normalize spend.</strong> Use bills or usage statements, including failed/retried attempts. Separate fixed subscriptions, taxes and credits that distort per-request prices.</li>
+          <li><strong>Compare and retest.</strong> Publish p50/p95 with sample size and the actual workload, then repeat at another time. A single result is a snapshot.</li>
+        </ol>
+      </section>
+      <section aria-labelledby="metrics">
+        <h2 id="metrics">Metrics worth recording</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Measure</th><th>Definition</th><th>Why it matters</th></tr></thead>
+            <tbody>
+              <tr><td>Completion rate</td><td>Successful jobs ÷ attempted jobs</td><td>A cheap partial answer is not an accomplished task.</td></tr>
+              <tr><td>Cost per completion</td><td>Total billed spend ÷ successful jobs</td><td>Includes the real cost of failures and retries.</td></tr>
+              <tr><td>p50/p95 latency</td><td>Median/95th-percentile completion times, with sample count</td><td>Shows typical and tail behavior; don't confuse with time to first token.</td></tr>
+              <tr><td>Retry overhead</td><td>Extra attempts ÷ initial attempts</td><td>Reveals hidden request multiplication.</td></tr>
+              <tr><td>Tool-call accuracy</td><td>Tool calls meeting the expected schema and intent</td><td>Gates automation reliability beyond plain chat.</td></tr>
+              <tr><td>Quota behavior</td><td>Actual 429s, rate headers, cooldowns and billing limits</td><td>Published caps can differ from real workload capacity.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Use the <a href="./#calculator">free calculator</a> to compare two observed costs per completed job after you have collected equivalent workloads.</p>
+      </section>
+      <section aria-labelledby="commercial">
+        <h2 id="commercial">Commercial transparency</h2>
+        <p>The checks and scorecard are independent resources. The <a href="./#setups">provider options</a> on the homepage include referral links that may generate a commission if you sign up or purchase. Listing a provider is not proof of reliability, payout size, suitability, or a successful benchmark.</p>
+        <a class="button" href="https://x.com/fluxsimpleia" rel="noopener noreferrer">Follow updates on X</a>
+        <a class="button secondary" href="https://github.com/GregGirault/fluxsimpleia" rel="noopener noreferrer">View the source repository</a>
+      </section>
+    </main>
+    <footer>Flux Simple IA · Published 6 November 2026 · Benchmark results require repeatable, independently checkable evidence.</footer>
+  </div>
+</body>
+</html>
