@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Free AI API benchmark CSV analyzer | Flux Simple IA</title>
+  <meta name="description" content="Analyze actual AI API spend, successful jobs, retries and failures locally. Free CSV analyzer with no upload, account or subscription.">
+  <meta name="robots" content="index,follow">
+  <link rel="canonical" href="https://greggirault.github.io/fluxsimpleia/scorecard.html">
+  <style>
+    :root { color-scheme: dark; --bg:#090d12; --panel:#141e29; --line:#34495e; --text:#eff7ff; --muted:#b4c8d8; --accent:#7dd3fc; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--text); font:16px/1.65 system-ui,-apple-system,"Segoe UI",sans-serif; }
+    a { color:var(--accent); }
+    .shell { width:min(1100px,calc(100% - 32px)); margin:0 auto; }
+    header,footer { padding:24px 0; border-bottom:1px solid var(--line); }
+    footer { border-top:1px solid var(--line); border-bottom:0; color:var(--muted); }
+    main { padding:40px 0 70px; }
+    h1 { font-size:clamp(34px,5vw,58px); letter-spacing:-.035em; line-height:1.08; margin:8px 0 18px; }
+    h2 { margin:40px 0 12px; }
+    p { max-width:850px; }
+    .muted { color:var(--muted); }
+    .panel { margin:28px 0; padding:22px; border:1px solid var(--line); border-radius:14px; background:var(--panel); }
+    .button { display:inline-block; padding:11px 16px; border:1px solid var(--line); border-radius:9px; color:var(--text); text-decoration:none; font-weight:700; }
+    .button:focus-visible, input:focus-visible { outline:3px solid var(--accent); outline-offset:3px; }
+    input[type=file] { max-width:100%; padding:14px; border:1px solid var(--line); border-radius:9px; background:#0b131d; color:var(--text); }
+    table { width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums; }
+    th,td { border-bottom:1px solid var(--line); padding:10px; vertical-align:top; text-align:left; }
+    th { color:var(--accent); }
+    .table-wrap { overflow-x:auto; }
+    [data-state=error] { color:#ffd0ca; }
+    [data-state=ok] { color:#a7f3d0; }
+    code { color:var(--accent); }
+  </style>
+</head>
+<body>
+  <header><div class="shell"><a href="./">Flux Simple IA</a> / Free benchmark tools</div></header>
+  <main class="shell">
+    <h1>What did your AI API actually cost?</h1>
+    <p class="muted">Analyze real job outcomes, retries and spend. This tool reads CSV files locally in your browser. Your file is never uploaded and no account is needed.</p>
+    <div class="panel">
+      <p><a class="button" href="benchmark-scorecard.csv" download>Download the empty CSV template</a></p>
+      <label for="scorecard-file"><strong>Analyze your completed measurements</strong></label>
+      <p><input type="file" id="scorecard-file" accept=".csv,text/csv" aria-describedby="file-help"></p>
+      <p id="file-help" class="muted">Upload a CSV with the template column names. Maximum 2 MB or 5,000 measurement rows. Empty or inconsistent measurements are rejected. The result appears below.</p>
+      <p id="feedback" role="status" aria-live="polite">No file selected.</p>
+    </div>
+    <section aria-labelledby="results-heading">
+      <h2 id="results-heading">Your results</h2>
+      <div id="results" class="table-wrap" aria-live="polite"></div>
+    </section>
+    <section aria-labelledby="method-heading">
+      <h2 id="method-heading">How to interpret the report</h2>
+      <p>One CSV row describes a batch of jobs for a specific provider, model, client version and workload. <strong>Attempts</strong> includes retries, while <strong>successful_jobs</strong> and <strong>failed_jobs</strong> count final outcomes. Enter the total API bill, including failed attempts, in <code>api_spend_usd</code>.</p>
+      <p>The tool groups data by workload, model, client version and provider. Cost per successful job divides the total bill by completed successful jobs. Failure rate counts failed final outcomes. Retry attempts are the difference between attempts and final outcomes.</p>
+      <p><strong>Latency warning:</strong> a pooled p95 cannot be calculated from pre-aggregated per-batch p95 numbers. We therefore show the <em>range of reported batch p95 values</em>, not a fabricated overall percentile. For fair provider comparisons, keep prompts, sampling conditions and model settings equivalent.</p>
+      <p class="muted">No supplier rankings or recommendations are inferred from a user-provided CSV alone. Validate data provenance and service terms before relying on financial conclusions.</p>
+    </section>
+    <p><a class="button" href="./">Return to the cost calculator and provider guide</a></p>
+  </main>
+  <footer><div class="shell">Flux Simple IA · Independent measurement tools · Affiliate links disclosed on the home page.</div></footer>
+  <script type="module">
+    import { summarizeScorecard } from './scorecard.mjs';
+    const input = document.getElementById('scorecard-file');
+    const feedback = document.getElementById('feedback');
+    const container = document.getElementById('results');
+    const currency = n => n === null ? 'n/a (0 successes)' : '$' + (n !== 0 && n < .0001 ? n.toPrecision(3) : n.toFixed(4));
+    const percent = n => (n * 100).toFixed(1) + '%';
+    function addCell(row, value, header = false) {
+      const cell = document.createElement(header ? 'th' : 'td');
+      cell.textContent = value;
+      if (header) cell.scope = 'col';
+      row.append(cell);
+    }
+    input.addEventListener('change', async () => {
+      const file = input.files && input.files[0];
+      container.replaceChildren();
+      if (!file) { feedback.textContent = 'No file selected.'; feedback.dataset.state = ''; return; }
+      try {
+        if (file.size > 2_000_000) throw new Error('File is larger than 2 MB.');
+        const report = summarizeScorecard(await file.text());
+        feedback.dataset.state = 'ok';
+        feedback.textContent = 'Validated ' + report.rows + ' measurement rows across ' +
+          report.cohorts + ' separate cohorts. Total spend in this file: ' + currency(report.observed_spend_usd) + '.';
+        const table = document.createElement('table');
+        const head = document.createElement('thead');
+        const headerRow = document.createElement('tr');
+        ['Workload','Model','Client','Provider','Successes','Failures','Retries','Total spend','Cost/success','Failure rate','Reported batch p95 range'].forEach(x => addCell(headerRow,x,true));
+        head.append(headerRow);
+        const body = document.createElement('tbody');
+        for (const item of report.results) {
+          const tr = document.createElement('tr');
+          const range = item.p95_observed_range_ms;
+          const values = [
+            item.workload_id, item.model, item.client_version, item.provider,
+            String(item.successful_jobs), String(item.failed_jobs), String(item.retry_attempts),
+            currency(item.api_spend_usd), currency(item.cost_per_success_usd),
+            percent(item.failure_rate), range ? range[0] + '–' + range[1] + ' ms' : 'unknown'
+          ];
+          values.forEach(x => addCell(tr,x));
+          body.append(tr);
+        }
+        table.append(head,body);
+        container.append(table);
+      } catch (error) {
+        feedback.dataset.state = 'error';
+        feedback.textContent = error instanceof Error ? error.message : 'Unable to read CSV.';
+      }
+    });
+  </script>
+</body>
+</html>
