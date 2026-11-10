@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AI API Retry Costs: Measure Cost per Completed Agent Job | Flux Simple IA</title>
+<meta name="description" content="A practical guide to measuring AI API cost per completed agent job, including retries, failures, duplicate effects and acceptance checks.">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://greggirault.github.io/fluxsimpleia/retry-cost-guide.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="The Hidden Cost of AI Agent Retries">
+<meta property="og:description" content="Why price per request is not cost per completed task—and how to measure it.">
+<meta property="og:url" content="https://greggirault.github.io/fluxsimpleia/retry-cost-guide.html">
+<style>
+:root{color-scheme:dark;--bg:#090d12;--panel:#111821;--text:#edf4fb;--muted:#a9bdd0;--accent:#7dd3fc}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:17px/1.75 Inter,system-ui,sans-serif}
+main,header,footer{width:min(800px,calc(100% - 36px));margin:auto}header{padding:55px 0 28px}main{padding-bottom:65px}
+h1{font-size:clamp(34px,6vw,55px);line-height:1.12;letter-spacing:-.035em}h2{font-size:clamp(23px,3.2vw,29px);line-height:1.3}
+p{color:var(--muted)}a{color:var(--accent)}nav a{margin-right:18px}section{border-top:1px solid #263646;padding:22px 0}
+aside{background:var(--panel);padding:18px 22px;border:1px solid #263646;border-radius:12px}footer{padding:24px 0 50px;color:var(--muted);font-size:14px}
+</style>
+</head><body>
+<header><nav aria-label="Main navigation"><a href="index.html">Home</a><a href="scorecard.html">CSV analyzer</a><a href="methodology.html">Testing protocol</a></nav>
+<p>Flux Simple IA · Engineering guide · 11 November 2026</p>
+<h1>The Hidden Cost of AI Agent Retries</h1>
+<p>Measure cost per completed job, not the price of a single API call.</p>
+</header><main>
+<aside><strong>Disclosure and evidence:</strong> This educational article contains no affiliate links or paid rankings. The worked example is hypothetical. No provider performance claims are made.</aside>
+<section><h2>Why the cheapest API request can cost more</h2><p>An API request is not the unit of value when an agent needs several calls to complete one job. A low advertised price can be offset by retries, failed tool calls, timeout ambiguity and extra tokens spent recovering state. A useful comparison starts with a completed, verified task.</p></section>
+<section><h2>The metric: cost per completed job</h2><p>For a defined workload and observation window, calculate total billed API spend divided by the number of jobs that passed the same acceptance checks. Include failed attempts and retries in the numerator. Exclude incomplete jobs from the denominator, but record their number separately. A provider with zero completed jobs has an undefined cost per completed job, not a cost of zero.</p></section>
+<section><h2>A worked example (illustrative, not benchmark data)</h2><p>Suppose provider A bills $0.02 per attempt and completes 80 of 100 jobs after 140 total attempts. Its API spend is $2.80, or $0.035 per completed job. Provider B bills $0.03 per attempt and completes 95 of 100 jobs after 110 attempts. Its API spend is $3.30, about $0.0347 per completed job. The apparent per-attempt price advantage disappears. These figures are invented solely to demonstrate the calculation; they are not measurements of real providers.</p></section>
+<section><h2>Make task success auditable</h2><p>Before running a comparison, define a fixed task set, model version, prompt, tools, concurrency and success checks. For a coding agent, checks might include test results, expected files, valid tool-call arguments and remote pull-request state. Keep a job identifier so retries and duplicate effects can be reconciled. Record latency and cost per attempt, then aggregate by job.</p></section>
+<section><h2>Retries are not always safe</h2><p>A timeout does not prove a tool action failed. The agent may have created a pull request, sent a message or changed a database before the response disappeared. Inspect remote state before retrying a non-idempotent action. Treat authentication failures, rate limits and transient server errors differently; exponential backoff is not a substitute for checking whether an action already happened.</p></section>
+<section><h2>Report the limits</h2><p>Separate API spend from subscriptions, taxes, human review and engineering time. Publish sample size, dates, failure counts, retry policy, workload definition and any excluded observations. Do not average batch p95 values and call the result an overall p95: raw request latencies are needed for a pooled percentile.</p></section>
+<section><h2>Run your own comparison</h2><p>Start with the free local CSV analyzer and the six-step migration protocol linked below. They do not establish a vendor ranking on their own; they help you collect comparable evidence before deciding where to route production agents.</p></section>
+<p><a href="scorecard.html">Analyze your own benchmark CSV</a> · <a href="methodology.html">Read the migration test protocol</a></p>
+</main><footer>Flux Simple IA · Independent methodology, not a vendor ranking. <a href="index.html">Back to home</a>.</footer>
+</body></html>
