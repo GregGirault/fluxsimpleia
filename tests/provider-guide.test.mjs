@@ -9,6 +9,16 @@ const guide = readFileSync(join(root, 'provider-guide.html'), 'utf8');
 const home = readFileSync(join(root, 'index.html'), 'utf8');
 const sitemap = readFileSync(join(root, 'sitemap.xml'), 'utf8');
 
+test('measurement pages offer direct, disclosed next steps without tracking', () => {
+  for (const page of ['scorecard.html', 'methodology.html']) {
+    const content = readFileSync(join(root, page), 'utf8');
+    assert.match(content, /href="provider-guide\.html"[^>]*>[^<]*disclosed referral links/i);
+    assert.ok(existsSync(join(root, 'provider-guide.html')));
+  }
+  assert.match(readFileSync(join(root, 'methodology.html'), 'utf8'), /href="scorecard\.html"/);
+  assert.match(readFileSync(join(root, 'scorecard.html'), 'utf8'), /href="methodology\.html"/);
+});
+
 test('provider guide uses a crawlable canonical path and meaningful metadata', () => {
   assert.match(guide, /<html lang="en">/);
   assert.match(guide, /<meta name="description"/);
