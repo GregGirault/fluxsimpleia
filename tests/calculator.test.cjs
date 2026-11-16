@@ -62,3 +62,9 @@ test('handles two zero-spend providers and form submission safely', () => {
   assert.match(output, /cost the same/);
   assert.equal(page.submit(), true);
 });
+test('handles near-equal provider costs without throwing', () => {
+  const page = createPage();
+  const output = page.set({ 'a-spend': 100, 'a-jobs': 100, 'b-spend': 100.001, 'b-jobs': 100 });
+  assert.match(output, /less than 0\.01% lower/);
+  assert.ok(!output.includes('NaN'));
+});
